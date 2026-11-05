@@ -1,0 +1,190 @@
+
+/* =========================================
+   AHY WATER STATION POS
+   Ocean Blue Global Theme
+========================================= */
+
+:root {
+  --ocean-950: #092942;
+  --ocean-900: #0c3150;
+  --ocean-800: #10466b;
+  --ocean-700: #116eaa;
+  --ocean-600: #1689c9;
+  --ocean-500: #24a8df;
+  --ocean-100: #dff3ff;
+  --ocean-50: #f0f9ff;
+
+  --page-bg: #f3f8fc;
+  --surface: #ffffff;
+  --text-primary: #173b59;
+  --text-secondary: #71869a;
+  --border-color: #e1ebf3;
+
+  --success: #15966b;
+  --warning: #d88917;
+  --danger: #d9485f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#q-app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    Inter,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.q-page {
+  background: var(--page-bg);
+}
+
+/* Global typography */
+
+.text-primary {
+  color: var(--ocean-700) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.page-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.page-subtitle {
+  margin-top: 7px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Buttons */
+
+.q-btn {
+  border-radius: 9px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.q-btn--standard.bg-primary,
+.q-btn.bg-primary {
+  box-shadow: 0 4px 10px rgba(17, 110, 170, 0.13);
+}
+
+.q-btn--standard.bg-primary:hover,
+.q-btn.bg-primary:hover {
+  filter: brightness(1.05);
+}
+
+/* Cards */
+
+.q-card {
+  border-radius: 15px;
+}
+
+.water-card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(24, 71, 105, 0.035);
+}
+
+/* Inputs */
+
+.q-field--outlined .q-field__control {
+  border-radius: 9px;
+}
+
+.q-field--outlined .q-field__control:before {
+  border-color: #d8e5ef;
+}
+
+.q-field--outlined.q-field--focused .q-field__control:after {
+  border-color: var(--ocean-600);
+}
+
+/* Tables */
+
+.q-table__container {
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 13px;
+  box-shadow: 0 4px 18px rgba(24, 71, 105, 0.025);
+}
+
+.q-table thead tr {
+  background: #f1f8fc;
+}
+
+.q-table thead th {
+  color: #607d93;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.q-table tbody td {
+  color: #34536b;
+  font-size: 13px;
+}
+
+.q-table tbody tr:hover {
+  background: #f4faff;
+}
+
+/* Dialogs */
+
+.q-dialog .q-card {
+  border-radius: 16px;
+}
+
+/* Scrollbars */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #edf4f8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bfd5e4;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #91b8d0;
+}
+
+/* Responsive defaults */
+
+@media (max-width: 700px) {
+  .page-title {
+    font-size: 22px;
+  }
+
+  .q-page.q-pa-lg { padding: 16px; }
+}
