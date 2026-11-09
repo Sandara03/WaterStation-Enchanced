@@ -11,7 +11,11 @@ class CustomerController extends Controller
     public function index(Request $r)
     {
         $d = $r->validate(['search' => 'nullable|string|max:255']);
-        return Customer::withCount('orders')->when($d['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$s.'%')->orWhere('phone', 'like', '%'.$s.'%')))->orderBy('name')->paginate(25);
+        return Customer::withCount(['orders','orders as completed_orders_count'=>fn($q)=>$q->where('status','Completed')])
+            ->withSum(['orders as completed_spend'=>fn($q)=>$q->where('status','Completed')],'total_amount')
+            ->withMax(['orders as last_purchase_at'=>fn($q)=>$q->where('status','Completed')],'created_at')
+            ->when($d['search']??null,fn($q,$s)=>$q->where(fn($q)=>$q->where('name','like','%'.$s.'%')->orWhere('phone','like','%'.$s.'%')->orWhere('email','like','%'.$s.'%')))
+            ->orderBy('name')->paginate(25);
     }
     private function rules(): array { return ['name' => 'required|string|max:255', 'phone' => 'nullable|string|max:40', 'address' => 'nullable|string|max:255', 'email' => 'nullable|email|max:255', 'notes' => 'nullable|string|max:2000']; }
     public function store(Request $r)
@@ -26,7 +30,11 @@ class CustomerController extends Controller
     }
     public function show(Customer $customer)
     {
-        return ['customer' => $customer, 'orders' => $customer->orders()->latest('id')->paginate(10)];
+        $completed=$customer->orders()->where('status','Completed');
+        $lastPurchase=(clone $completed)->max('created_at');
+        return ['customer'=>$customer,'orders'=>$customer->orders()->latest('id')->paginate(10),
+            'summary'=>['completed_orders'=>(clone $completed)->count(),'completed_spend'=>(float)(clone $completed)->sum('total_amount'),'last_purchase_at'=>$lastPurchase?\Illuminate\Support\Carbon::parse($lastPurchase,config('app.timezone'))->toISOString():null],
+            'deliveries'=>\App\Models\Delivery::where('customer_id',$customer->id)->latest('id')->limit(5)->get()];
     }
     public function update(Request $r, Customer $customer)
     {

@@ -1,14 +1,20 @@
 {
   "name": "mywaterstation-frontend",
-  "version": "1.0.0",
+  "productName": "AHY Water Station",
+  "description": "AHY Water Station sales and station management",
+  "version": "2.2.2",
   "private": true,
   "scripts": {
     "dev": "quasar dev",
     "build": "quasar build",
     "typecheck": "quasar prepare && vue-tsc --noEmit",
-    "postinstall": "quasar prepare"
+    "postinstall": "quasar prepare",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "@quasar/extras": "^1.17.0",
     "axios": "^1.8.0",
     "quasar": "^2.17.0",
@@ -22,5 +28,6 @@
   },
   "engines": {
     "node": ">=22.22.0"
-  }
+  },
+  "type": "module"
 }

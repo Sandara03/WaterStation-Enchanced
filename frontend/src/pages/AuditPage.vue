@@ -1,7 +1,96 @@
-<template><q-page class="q-pa-lg"><h1 class="page-title">Activity log</h1><p class="page-subtitle">Review who changed a record, what happened, and when.</p><q-input v-model="search" outlined clearable label="Search action, staff, or description" class="q-mb-md" @keyup.enter="page=1;load()"><template #append><q-btn flat round icon="search" aria-label="Search activity" @click="page=1;load()"/></template></q-input><q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" role="alert">{{error}}</q-banner><q-table :rows="rows" :columns="columns" :loading="loading" row-key="id" flat bordered hide-pagination :pagination="{rowsPerPage:0}" no-data-label="No matching activity."/><div class="row justify-end q-mt-md"><q-pagination v-model="page" :max="last" :max-pages="5" direction-links @update:model-value="load"/></div><p class="text-caption text-grey-7 q-mt-lg">Read-only within the app. A database administrator can still modify database records.</p></q-page></template>
+<template>
+  <q-page class="q-pa-lg"
+    ><h1 class="page-title">Activity log</h1>
+    <p class="page-subtitle">Review who changed a record, what happened, and when.</p>
+    <q-input
+      v-model="search"
+      outlined
+      clearable
+      label="Search action, staff, or description"
+      class="q-mb-md"
+      @keyup.enter="
+        page = 1;
+        load();
+      "
+      ><template #append
+        ><q-btn
+          flat
+          round
+          icon="search"
+          aria-label="Search activity"
+          @click="
+            page = 1;
+            load();
+          " /></template></q-input
+    ><q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" role="alert">{{
+      error
+    }}</q-banner
+    ><q-table
+      :rows="rows"
+      :columns="columns"
+      :loading="loading"
+      row-key="id"
+      flat
+      bordered
+      hide-pagination
+      :pagination="{ rowsPerPage: 0 }"
+      no-data-label="No matching activity."
+    />
+    <div class="row justify-end q-mt-md">
+      <q-pagination
+        v-model="page"
+        :max="last"
+        :max-pages="5"
+        direction-links
+        @update:model-value="load"
+      />
+    </div>
+    <p class="text-caption text-grey-7 q-mt-lg">
+      Read-only within the app. A database administrator can still modify database records.
+    </p></q-page
+  >
+</template>
 <script setup lang="ts">
-import{onMounted,ref}from'vue';import api,{errorMessage}from'../services/api';import{dateTime}from'../services/format'
-const rows=ref<any[]>([]),loading=ref(false),error=ref(''),search=ref(''),page=ref(1),last=ref(1)
-const columns=[{name:'created_at',label:'When',field:(r:any)=>dateTime(r.created_at),align:'left' as const},{name:'actor',label:'Staff',field:'actor',align:'left' as const},{name:'action',label:'Action',field:'action',align:'left' as const},{name:'record',label:'Record',field:(r:any)=>`${r.entity_type||''} #${r.entity_id||''}`,align:'left' as const},{name:'description',label:'Description',field:'description',align:'left' as const}]
-async function load(){loading.value=true;error.value='';try{const{data}=await api.get('/audit-logs',{params:{page:page.value,search:search.value}});rows.value=data.data;last.value=data.last_page}catch(e){error.value=errorMessage(e)}finally{loading.value=false}}onMounted(load)
+import { onMounted, ref } from 'vue';
+import api, { errorMessage } from '../services/api';
+import { dateTime } from '../services/format';
+const rows = ref<any[]>([]),
+  loading = ref(false),
+  error = ref(''),
+  search = ref(''),
+  page = ref(1),
+  last = ref(1);
+const columns = [
+  {
+    name: 'created_at',
+    label: 'When',
+    field: (r: any) => dateTime(r.created_at),
+    align: 'left' as const,
+  },
+  { name: 'actor', label: 'Staff', field: 'actor', align: 'left' as const },
+  { name: 'action', label: 'Action', field: 'action', align: 'left' as const },
+  {
+    name: 'record',
+    label: 'Record',
+    field: (r: any) => `${r.entity_type || ''} #${r.entity_id || ''}`,
+    align: 'left' as const,
+  },
+  { name: 'description', label: 'Description', field: 'description', align: 'left' as const },
+];
+async function load() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const { data } = await api.get('/audit-logs', {
+      params: { page: page.value, search: search.value },
+    });
+    rows.value = data.data;
+    last.value = data.last_page;
+  } catch (e) {
+    error.value = errorMessage(e);
+  } finally {
+    loading.value = false;
+  }
+}
+onMounted(load);
 </script>

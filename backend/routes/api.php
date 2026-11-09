@@ -2,6 +2,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{AuthController, ProductController, OrderController, DashboardController, CustomerController, DeliveryController, ReportController, InventoryController, AuditLogController, ExpenseController};
 
+Route::get('/health', function () {
+    try { \Illuminate\Support\Facades\DB::select('SELECT 1'); return response()->json(['status'=>'ok']); }
+    catch (\Throwable $e) { return response()->json(['status'=>'unavailable'],503); }
+});
+
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
 Route::middleware('token.auth')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -15,6 +20,7 @@ Route::middleware('token.auth')->group(function () {
     Route::apiResource('customers', CustomerController::class)->except('destroy');
     Route::get('/deliveries', [DeliveryController::class, 'index']);
     Route::post('/deliveries', [DeliveryController::class, 'store']);
+    Route::get('/deliveries/{delivery}', [DeliveryController::class, 'show']);
     Route::patch('/deliveries/{delivery}', [DeliveryController::class, 'update']);
     Route::get('/inventory/movements', [InventoryController::class, 'movements']);
     Route::middleware('admin')->group(function () {

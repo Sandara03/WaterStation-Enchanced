@@ -1,6 +1,61 @@
-<template><q-page class="q-pa-lg"><h1 class="page-title">My account</h1><p class="page-subtitle">{{ staff?.name }} · {{ staff?.email }} · {{ staff?.role }}</p><q-card flat bordered class="q-pa-lg" style="max-width:520px"><div class="text-h6 q-mb-md">Change password</div><q-form @submit="save" class="q-gutter-md"><q-input v-model="form.current_password" outlined label="Current password" type="password" autocomplete="current-password" :rules="[v=>!!v||'Required']"/><q-input v-model="form.password" outlined label="New password" type="password" autocomplete="new-password" hint="At least 12 characters" :rules="[v=>v.length>=12||'Use at least 12 characters']"/><q-input v-model="form.password_confirmation" outlined label="Confirm new password" type="password" autocomplete="new-password" :rules="[v=>v===form.password||'Passwords must match']"/><q-btn color="primary" type="submit" label="Change password" :loading="busy"/><p class="text-caption text-grey-7">Changing your password signs out all your sessions.</p></q-form></q-card></q-page></template>
+<template>
+  <q-page class="q-pa-lg"
+    ><h1 class="page-title">My account</h1>
+    <p class="page-subtitle">{{ staff?.name }} · {{ staff?.email }} · {{ staff?.role }}</p>
+    <q-card flat bordered class="q-pa-lg" style="max-width: 520px"
+      ><div class="text-h6 q-mb-md">Change password</div>
+      <q-form @submit="save" class="q-gutter-md"
+        ><q-input
+          v-model="form.current_password"
+          outlined
+          label="Current password"
+          type="password"
+          autocomplete="current-password"
+          :rules="[(v) => !!v || 'Required']"
+        /><q-input
+          v-model="form.password"
+          outlined
+          label="New password"
+          type="password"
+          autocomplete="new-password"
+          hint="At least 12 characters"
+          :rules="[(v) => v.length >= 12 || 'Use at least 12 characters']"
+        /><q-input
+          v-model="form.password_confirmation"
+          outlined
+          label="Confirm new password"
+          type="password"
+          autocomplete="new-password"
+          :rules="[(v) => v === form.password || 'Passwords must match']"
+        /><q-btn color="primary" type="submit" label="Change password" :loading="busy" />
+        <p class="text-caption text-grey-7">
+          Changing your password signs out all your sessions.
+        </p></q-form
+      ></q-card
+    ></q-page
+  >
+</template>
 <script setup lang="ts">
-import { ref } from 'vue'; import { useRouter } from 'vue-router'; import { useQuasar } from 'quasar'; import api, { errorMessage } from '../services/api'; import { staff, clearSession } from '../services/auth'
-const form=ref({current_password:'',password:'',password_confirmation:''}),busy=ref(false),router=useRouter(),q=useQuasar()
-async function save(){busy.value=true;try{await api.post('/auth/password',form.value);clearSession();q.notify({type:'positive',message:'Password changed. Please sign in.'});await router.replace('/login')}catch(e){q.notify({type:'negative',message:errorMessage(e)})}finally{busy.value=false}}
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
+import api, { errorMessage } from '../services/api';
+import { staff, clearSession } from '../services/auth';
+const form = ref({ current_password: '', password: '', password_confirmation: '' }),
+  busy = ref(false),
+  router = useRouter(),
+  q = useQuasar();
+async function save() {
+  busy.value = true;
+  try {
+    await api.post('/auth/password', form.value);
+    clearSession();
+    q.notify({ type: 'positive', message: 'Password changed. Please sign in.' });
+    await router.replace('/login');
+  } catch (e) {
+    q.notify({ type: 'negative', message: errorMessage(e) });
+  } finally {
+    busy.value = false;
+  }
+}
 </script>

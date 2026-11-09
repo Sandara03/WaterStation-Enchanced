@@ -1,1 +1,7 @@
-<template><q-page class="flex flex-center column"><q-icon name="explore_off" size="70px" color="primary"/><h1 class="text-h4">Page not found</h1><q-btn to="/" label="Back to overview" color="primary"/></q-page></template>
+<template>
+  <q-page class="flex flex-center column"
+    ><q-icon name="explore_off" size="70px" color="primary" />
+    <h1 class="text-h4">Page not found</h1>
+    <q-btn to="/" label="Back to overview" color="primary"
+  /></q-page>
+</template>

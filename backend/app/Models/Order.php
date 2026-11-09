@@ -7,5 +7,6 @@ class Order extends Model {
  protected $casts=['total_amount'=>'decimal:2','cash_received'=>'decimal:2','change_amount'=>'decimal:2'];
  public function items(){return $this->hasMany(OrderItem::class);}
  public function customer(){return $this->belongsTo(Customer::class);}
- public function delivery(){return $this->hasOne(Delivery::class);}
+ public function delivery(){return $this->hasOne(Delivery::class)->latestOfMany();}
+ public function cashier(){return $this->belongsTo(User::class,'cashier_id')->select('id','name');}
 }

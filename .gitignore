@@ -6,3 +6,9 @@ frontend/.quasar/
 frontend/dist/
 backend/public/app/
 *.log
+frontend/src-capacitor/node_modules/
+frontend/src-capacitor/www/
+*.jks
+*.keystore
+artifacts/
+backend/public/apk/

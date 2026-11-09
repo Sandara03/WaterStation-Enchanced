@@ -1,4 +1,5 @@
 import { defineConfig } from '#q-app/wrappers'
+import packageInfo from './package.json'
 
 export default defineConfig(() => ({
   css: ['app.scss'],
@@ -9,6 +10,10 @@ export default defineConfig(() => ({
     vueRouterMode: 'history',
     publicPath: process.env.AHY_COMBINED_BUILD === '1' ? '/app/' : '/',
     vueRouterBase: '/',
+    env: {
+      AHY_API_URL: process.env.AHY_API_URL || '',
+      AHY_APP_VERSION: packageInfo.version,
+    },
   },
 
   devServer: {
@@ -26,5 +31,9 @@ export default defineConfig(() => ({
   framework: {
     config: {},
     plugins: ['Dialog', 'Notify'],
+  },
+
+  capacitor: {
+    hideSplashscreen: true,
   },
 }))

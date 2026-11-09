@@ -8,20 +8,31 @@ use Illuminate\Support\Facades\{DB, Validator};
 
 class CreateStaff extends Command
 {
-    protected $signature = 'staff:create {email} {--role=cashier} {--reset : Reset the password and role of an existing account}';
+    protected $signature = 'staff:create {email} {--role=cashier} {--reset : Reset the password and role of an existing account} {--if-missing : Preserve an existing active account with the requested role}';
     protected $description = 'Create a staff account; passwords are entered privately';
 
     public function handle(): int
     {
         $email = strtolower(trim($this->argument('email')));
+        $identity = Validator::make(['email'=>$email,'role'=>$this->option('role')], ['email'=>'required|email|max:255','role'=>'required|in:admin,cashier']);
+        if ($identity->fails()) { foreach ($identity->errors()->all() as $error) $this->error($error); return self::FAILURE; }
+        if ($this->option('if-missing') && $this->option('reset')) {
+            $this->error('Choose either --if-missing or --reset, not both.'); return self::FAILURE;
+        }
+        $existing = User::where('email',$email)->first();
+        if ($existing && $this->option('if-missing')) {
+            if ($existing->role !== $this->option('role') || !$existing->is_active) {
+                $this->error('The account exists with a different role or is inactive. No account details were changed.'); return self::FAILURE;
+            }
+            $this->info('Existing account preserved. Its password and sessions were not changed.'); return self::SUCCESS;
+        }
+        if ($existing && !$this->option('reset')) { $this->error('Account exists. Use --reset to update it.'); return self::FAILURE; }
         $name = $this->ask('Full name');
         $password = $this->secret('Password (at least 12 characters)');
         $confirmation = $this->secret('Confirm password');
         $data = ['email' => $email, 'name' => $name, 'password' => $password, 'password_confirmation' => $confirmation, 'role' => $this->option('role')];
         $v = Validator::make($data, ['email' => 'required|email|max:255', 'name' => 'required|string|max:255', 'password' => 'required|string|min:12|max:128|confirmed', 'role' => 'required|in:admin,cashier']);
         if ($v->fails()) { foreach ($v->errors()->all() as $error) { $this->error($error); } return self::FAILURE; }
-        $existing = User::where('email', $email)->first();
-        if ($existing && !$this->option('reset')) { $this->error('Account exists. Use --reset to update it.'); return self::FAILURE; }
         DB::transaction(function () use ($email, $name, $password, $data) {
             $user = User::updateOrCreate(['email' => $email], ['name' => $name, 'password' => $password, 'role' => $data['role'], 'is_active' => true]);
             AccessToken::where('user_id', $user->id)->delete();

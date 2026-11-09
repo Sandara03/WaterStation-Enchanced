@@ -13,13 +13,13 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $data = $request->validate(['search' => 'nullable|string|max:255', 'status' => 'nullable|in:Completed,Voided', 'page' => 'sometimes|integer|min:1']);
-        return Order::with(['items.product', 'customer', 'delivery'])
+        return Order::with(['items.product', 'customer', 'delivery', 'cashier'])
             ->when($data['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('receipt_number', 'like', '%'.$s.'%')->orWhere('customer_name', 'like', '%'.$s.'%')))
             ->when($data['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
             ->latest('id')->paginate(20);
     }
 
-    public function show(Order $order) { return $order->load(['items.product', 'customer', 'delivery']); }
+    public function show(Order $order) { return $order->load(['items.product', 'customer', 'delivery', 'cashier']); }
 
     public function store(Request $request)
     {
@@ -30,6 +30,7 @@ class OrderController extends Controller
             'payment_method' => 'required|in:Cash,GCash,Bank Transfer',
             'cash_received' => 'required|numeric|decimal:0,2|min:0|max:99999999.99',
             'payment_reference' => 'nullable|required_unless:payment_method,Cash|string|max:100',
+            'expected_total' => 'sometimes|required|numeric|decimal:0,2|min:0|max:99999999.99',
             'items' => 'required|array|min:1|max:100',
             'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1|max:100000',
@@ -39,6 +40,9 @@ class OrderController extends Controller
             $quantities->all(), $data['customer_id'] ?? null, $data['customer_name'] ?? null,
             $data['payment_method'], number_format((float) $data['cash_received'], 2, '.', ''), $data['payment_reference'] ?? null,
         ]));
+        if (array_key_exists('expected_total', $data)) {
+            $fingerprint=hash('sha256',$fingerprint.'|'.number_format((float)$data['expected_total'],2,'.',''));
+        }
         $replayed = false;
         $order = DB::transaction(function () use ($data, $quantities, $fingerprint, $request, &$replayed) {
             User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
@@ -46,7 +50,7 @@ class OrderController extends Controller
             if ($existing) {
                 abort_unless($existing->cashier_id === $request->user()->id && hash_equals($existing->checkout_fingerprint, $fingerprint), 409, 'This checkout key was already used for a different transaction.');
                 $replayed = true;
-                return $existing->load('items.product');
+                return $existing->load(['items.product','cashier']);
             }
             $totalCents = 0;
             $rows = [];
@@ -64,6 +68,9 @@ class OrderController extends Controller
                 throw ValidationException::withMessages(['items' => 'Order total exceeds the supported limit.']);
             }
             $received = (int) round((float) $data['cash_received'] * 100);
+            if (isset($data['expected_total']) && (int)round((float)$data['expected_total']*100)!==$totalCents) {
+                throw ValidationException::withMessages(['expected_total'=>'Prices changed. Refresh stock, review the updated total, and confirm payment again.']);
+            }
             if ($received < $totalCents || ($data['payment_method'] !== 'Cash' && $received !== $totalCents)) {
                 throw ValidationException::withMessages(['cash_received' => 'Cash must cover the total. Digital payments must equal the total.']);
             }
@@ -85,7 +92,7 @@ class OrderController extends Controller
                 StockMovement::create(['product_id' => $p->id, 'type' => 'sale', 'quantity' => $row['quantity'], 'before_stock' => $before, 'after_stock' => $before - $row['quantity'], 'reason' => $order->receipt_number]);
             }
             Audit::record('order.completed', 'Order', $order->id, 'Sale completed', ['receipt' => $order->receipt_number, 'total' => $order->total_amount]);
-            return $order->load('items.product');
+            return $order->load(['items.product','cashier']);
         }, 3);
         return response()->json($order, $replayed ? 200 : 201);
     }
@@ -104,7 +111,12 @@ class OrderController extends Controller
                 $p->increment('stock', $item->quantity);
                 StockMovement::create(['product_id' => $p->id, 'type' => 'void_return', 'quantity' => $item->quantity, 'before_stock' => $before, 'after_stock' => $before + $item->quantity, 'reason' => 'Void '.$locked->receipt_number]);
             }
-            foreach ($deliveries as $delivery) { $delivery->update(['status' => 'Cancelled']); }
+            foreach ($deliveries as $delivery) {
+                if($delivery->status!=='Cancelled'){
+                    $delivery->update(['status'=>'Cancelled']);
+                    $delivery->events()->create(['user_id'=>$request->user()->id,'status'=>'Cancelled','message'=>'Sale voided: '.$data['reason'],'created_at'=>now()]);
+                }
+            }
             $locked->update(['status' => 'Voided', 'void_reason' => $data['reason'], 'voided_at' => now(), 'voided_by' => $request->user()->id]);
             Audit::record('order.voided', 'Order', $locked->id, $data['reason'], ['receipt' => $locked->receipt_number]);
             return $locked->load('items.product');

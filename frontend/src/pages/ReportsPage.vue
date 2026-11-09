@@ -1,18 +1,207 @@
-<template><q-page class="q-pa-lg"><div class="row justify-between items-center q-mb-lg"><div><h1 class="page-title">Reports & analytics</h1><p class="page-subtitle">Understand completed sales, payment methods, and recorded expenses.</p></div><q-btn color="primary" icon="download" label="Export sales CSV" :loading="exporting" :disable="loading" @click="exportCsv"/></div>
-<q-card flat bordered class="q-pa-md q-mb-lg"><q-form @submit="load" class="row q-col-gutter-md items-center"><div class="col-12 col-sm-4"><q-input v-model="from" outlined dense type="date" label="From" :rules="[v=>!!v||'Required']"/></div><div class="col-12 col-sm-4"><q-input v-model="to" outlined dense type="date" label="To" :rules="[v=>!!v&&v>=from||'Choose a date on or after From']"/></div><div class="col-12 col-sm-4"><q-btn type="submit" color="primary" label="Generate report" :loading="loading"/></div></q-form></q-card>
-<q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" role="alert">{{error}}</q-banner>
-<div v-if="loaded" class="text-caption text-grey-7 q-mb-md">Showing {{report.from}} to {{report.to}} · Asia/Manila</div>
-<div class="row q-col-gutter-md q-mb-lg"><div v-for="c in cards" :key="c.label" class="col-12 col-sm-6 col-lg-3"><q-card flat bordered class="q-pa-lg"><div class="text-grey-7">{{c.label}}</div><div class="text-h5 text-weight-bold q-mt-sm">{{c.value}}</div></q-card></div></div>
-<q-banner class="bg-blue-1 text-primary q-mb-lg" rounded>Sales less recorded expenses is a simple cash overview. It is not accounting profit: product costs, taxes, depreciation, and unrecorded costs are not calculated.</q-banner>
-<div class="row q-col-gutter-lg"><div class="col-12 col-md-8"><q-card flat bordered><q-card-section class="text-h6">Daily sales</q-card-section><q-card-section v-if="report.daily.length"><div v-for="d in report.daily" :key="d.date" class="q-mb-md"><div class="row justify-between text-caption"><span>{{d.date}} · {{d.orders}} orders</span><span>{{money(d.sales)}}</span></div><q-linear-progress rounded size="12px" color="primary" :value="Number(d.sales)/peak" class="q-mt-xs"/></div></q-card-section><q-card-section v-else class="text-grey-7">No completed sales for this period.</q-card-section></q-card></div><div class="col-12 col-md-4"><q-card flat bordered><q-card-section class="text-h6">Payment methods</q-card-section><q-list separator><q-item v-for="p in report.payment_breakdown" :key="p.payment_method"><q-item-section>{{p.payment_method}}<q-item-label caption>{{p.orders}} orders</q-item-label></q-item-section><q-item-section side>{{money(p.total)}}</q-item-section></q-item></q-list><q-card-section v-if="!report.payment_breakdown.length" class="text-grey-7">No payments in this period.</q-card-section><q-separator/><q-card-section><div class="text-grey-7">Average sale</div><div class="text-h5">{{money(report.average_sale)}}</div></q-card-section></q-card></div></div>
-<q-card flat bordered class="q-mt-lg"><q-card-section class="text-h6">Best-selling products</q-card-section><q-table flat :rows="report.top_products" :columns="columns" row-key="product_id" :pagination="{rowsPerPage:10}" no-data-label="No product sales in this period."/></q-card>
-</q-page></template>
+<template>
+  <q-page class="q-pa-lg"
+    ><div class="row justify-between items-center q-mb-lg">
+      <div>
+        <h1 class="page-title">Reports & analytics</h1>
+        <p class="page-subtitle">
+          Understand completed sales, payment methods, and recorded expenses.
+        </p>
+      </div>
+      <q-btn
+        color="primary"
+        icon="download"
+        label="Export sales CSV"
+        :loading="exporting"
+        :disable="loading"
+        @click="exportCsv"
+      />
+    </div>
+    <q-card flat bordered class="q-pa-md q-mb-lg"
+      ><q-form @submit="load" class="row q-col-gutter-md items-center"
+        ><div class="col-12 col-sm-4">
+          <q-input
+            v-model="from"
+            outlined
+            dense
+            type="date"
+            label="From"
+            :rules="[(v) => !!v || 'Required']"
+          />
+        </div>
+        <div class="col-12 col-sm-4">
+          <q-input
+            v-model="to"
+            outlined
+            dense
+            type="date"
+            label="To"
+            :rules="[(v) => (!!v && v >= from) || 'Choose a date on or after From']"
+          />
+        </div>
+        <div class="col-12 col-sm-4">
+          <q-btn
+            type="submit"
+            color="primary"
+            label="Generate report"
+            :loading="loading"
+          /></div></q-form
+    ></q-card>
+    <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" role="alert">{{
+      error
+    }}</q-banner>
+    <div v-if="loaded" class="text-caption text-grey-7 q-mb-md">
+      Showing {{ report.from }} to {{ report.to }} · Asia/Manila
+    </div>
+    <div class="row q-col-gutter-md q-mb-lg">
+      <div v-for="c in cards" :key="c.label" class="col-12 col-sm-6 col-lg-3">
+        <q-card flat bordered class="q-pa-lg"
+          ><div class="text-grey-7">{{ c.label }}</div>
+          <div class="text-h5 text-weight-bold q-mt-sm">{{ c.value }}</div></q-card
+        >
+      </div>
+    </div>
+    <q-banner class="bg-blue-1 text-primary q-mb-lg" rounded
+      >Sales less recorded expenses is a simple cash overview. It is not accounting profit: product
+      costs, taxes, depreciation, and unrecorded costs are not calculated.</q-banner
+    >
+    <div class="row q-col-gutter-lg">
+      <div class="col-12 col-md-8">
+        <q-card flat bordered
+          ><q-card-section class="text-h6">Daily sales</q-card-section
+          ><q-card-section v-if="report.daily.length"
+            ><div v-for="d in report.daily" :key="d.date" class="q-mb-md">
+              <div class="row justify-between text-caption">
+                <span>{{ d.date }} · {{ d.orders }} orders</span><span>{{ money(d.sales) }}</span>
+              </div>
+              <q-linear-progress
+                rounded
+                size="12px"
+                color="primary"
+                :value="Number(d.sales) / peak"
+                class="q-mt-xs"
+              /></div></q-card-section
+          ><q-card-section v-else class="text-grey-7"
+            >No completed sales for this period.</q-card-section
+          ></q-card
+        >
+      </div>
+      <div class="col-12 col-md-4">
+        <q-card flat bordered
+          ><q-card-section class="text-h6">Payment methods</q-card-section
+          ><q-list separator
+            ><q-item v-for="p in report.payment_breakdown" :key="p.payment_method"
+              ><q-item-section
+                >{{ p.payment_method
+                }}<q-item-label caption>{{ p.orders }} orders</q-item-label></q-item-section
+              ><q-item-section side>{{ money(p.total) }}</q-item-section></q-item
+            ></q-list
+          ><q-card-section v-if="!report.payment_breakdown.length" class="text-grey-7"
+            >No payments in this period.</q-card-section
+          ><q-separator /><q-card-section
+            ><div class="text-grey-7">Average sale</div>
+            <div class="text-h5">{{ money(report.average_sale) }}</div></q-card-section
+          ></q-card
+        >
+      </div>
+    </div>
+    <q-card flat bordered class="q-mt-lg"
+      ><q-card-section class="text-h6">Best-selling products</q-card-section
+      ><q-table
+        flat
+        :rows="report.top_products"
+        :columns="columns"
+        row-key="product_id"
+        :pagination="{ rowsPerPage: 10 }"
+        no-data-label="No product sales in this period."
+    /></q-card>
+  </q-page>
+</template>
 <script setup lang="ts">
-import{computed,onMounted,ref}from'vue';import{useQuasar}from'quasar';import api,{errorMessage}from'../services/api';import{localDate,money}from'../services/format'
-const q=useQuasar(),now=new Date(),from=ref(localDate(new Date(now.getFullYear(),now.getMonth(),1))),to=ref(localDate()),loading=ref(false),exporting=ref(false),loaded=ref(false),error=ref('')
-const report=ref({from:'',to:'',revenue:0,orders:0,expenses:0,sales_less_expenses:0,average_sale:0,daily:[] as any[],top_products:[] as any[],payment_breakdown:[] as any[]})
-const peak=computed(()=>Math.max(1,...report.value.daily.map(d=>Number(d.sales)))),cards=computed(()=>[{label:'Completed sales',value:money(report.value.revenue)},{label:'Completed orders',value:report.value.orders},{label:'Recorded expenses',value:money(report.value.expenses)},{label:'Sales less expenses',value:money(report.value.sales_less_expenses)}])
-const columns=[{name:'product',label:'Product',field:(r:any)=>r.product?.name||'Legacy product',align:'left' as const},{name:'quantity_sold',label:'Units sold',field:'quantity_sold',align:'right' as const},{name:'revenue',label:'Revenue',field:(r:any)=>money(r.revenue),align:'right' as const}]
-async function load(){if(!from.value||!to.value||to.value<from.value){error.value='Choose a valid date range.';return}loading.value=true;error.value='';try{report.value=(await api.get('/reports/summary',{params:{from:from.value,to:to.value}})).data;loaded.value=true}catch(e){error.value=errorMessage(e)}finally{loading.value=false}}
-async function exportCsv(){if(!from.value||to.value<from.value){error.value='Choose a valid date range.';return}exporting.value=true;try{const{data}=await api.get('/reports/export',{params:{from:from.value,to:to.value},responseType:'blob'});const url=URL.createObjectURL(data),a=document.createElement('a');a.href=url;a.download=`ahy-sales-${from.value}-to-${to.value}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){q.notify({type:'negative',message:'Could not export the report. Check the date range and connection.'})}finally{exporting.value=false}}onMounted(load)
+import { computed, onMounted, ref } from 'vue';
+import { useQuasar } from 'quasar';
+import api, { errorMessage } from '../services/api';
+import { localDate, money } from '../services/format';
+import { saveTextFile } from '../services/files';
+const q = useQuasar(),
+  now = new Date(),
+  from = ref(localDate(new Date(now.getFullYear(), now.getMonth(), 1))),
+  to = ref(localDate()),
+  loading = ref(false),
+  exporting = ref(false),
+  loaded = ref(false),
+  error = ref('');
+const report = ref({
+  from: '',
+  to: '',
+  revenue: 0,
+  orders: 0,
+  expenses: 0,
+  sales_less_expenses: 0,
+  average_sale: 0,
+  daily: [] as any[],
+  top_products: [] as any[],
+  payment_breakdown: [] as any[],
+});
+const peak = computed(() => Math.max(1, ...report.value.daily.map((d) => Number(d.sales)))),
+  cards = computed(() => [
+    { label: 'Completed sales', value: money(report.value.revenue) },
+    { label: 'Completed orders', value: report.value.orders },
+    { label: 'Recorded expenses', value: money(report.value.expenses) },
+    { label: 'Sales less expenses', value: money(report.value.sales_less_expenses) },
+  ]);
+const columns = [
+  {
+    name: 'product',
+    label: 'Product',
+    field: (r: any) => r.product?.name || 'Legacy product',
+    align: 'left' as const,
+  },
+  { name: 'quantity_sold', label: 'Units sold', field: 'quantity_sold', align: 'right' as const },
+  {
+    name: 'revenue',
+    label: 'Revenue',
+    field: (r: any) => money(r.revenue),
+    align: 'right' as const,
+  },
+];
+async function load() {
+  if (!from.value || !to.value || to.value < from.value) {
+    error.value = 'Choose a valid date range.';
+    return;
+  }
+  loading.value = true;
+  error.value = '';
+  try {
+    report.value = (
+      await api.get('/reports/summary', { params: { from: from.value, to: to.value } })
+    ).data;
+    loaded.value = true;
+  } catch (e) {
+    error.value = errorMessage(e);
+  } finally {
+    loading.value = false;
+  }
+}
+async function exportCsv() {
+  if (!from.value || to.value < from.value) {
+    error.value = 'Choose a valid date range.';
+    return;
+  }
+  exporting.value = true;
+  try {
+    const { data } = await api.get('/reports/export', {
+      params: { from: from.value, to: to.value },
+      responseType: 'blob',
+    });
+    await saveTextFile(`ahy-sales-${from.value}-to-${to.value}.csv`, await data.text(), 'text/csv;charset=utf-8');
+  } catch (e) {
+    q.notify({
+      type: 'negative',
+      message: 'Could not export the report. Check the date range and connection.',
+    });
+  } finally {
+    exporting.value = false;
+  }
+}
+onMounted(load);
 </script>

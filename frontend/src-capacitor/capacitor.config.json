@@ -1,0 +1,17 @@
+{
+  "appId": "com.ahy.waterstation",
+  "appName": "AHY Water Station",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "SystemBars": {
+      "insetsHandling": "native",
+      "style": "DARK"
+    }
+  }
+}

@@ -9,6 +9,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(DemoAdminSeeder::class);
+
         $products = [
             ['name' => 'Purified Water - 5 Gallons', 'description' => 'Clean purified drinking water.', 'price' => 25, 'stock' => 10, 'low_stock' => 5],
             ['name' => 'Mineral Water - 5 Gallons', 'description' => 'Mineral drinking water.', 'price' => 30, 'stock' => 8, 'low_stock' => 5],

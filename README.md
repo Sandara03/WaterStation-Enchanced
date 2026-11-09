@@ -1,131 +1,105 @@
-# AHY Water Station — Enhanced Final Project
+# AHY Water Station — iPhone home-screen web app 2.2.2
 
-Laravel 12 API + Vue 3 / TypeScript / Quasar. This revision improves the supplied project and adds login with staff roles, payment validation, duplicate-checkout protection, printable receipts, sale voids, expense tracking, stock adjustments, and activity history.
+Laravel 12 API with a Vue 3, TypeScript, and Quasar interface for staff access, POS, inventory, receipts, customers, deliveries, expenses, management reports, and activity history.
 
-Start with this guide. See `FINAL_PROJECT_GUIDE.md` for the feature comparison and presentation flow, `MANUAL_ACCEPTANCE_CHECKLIST.md` for acceptance scenarios, and `VERIFICATION.md` for the checks actually performed.
+For iPhone installation from Safari on the same Wi-Fi, read **IPHONE_INSTALLATION.md**. This release adds the home-screen manifest, Apple touch icon, launch metadata, and an installation-help dialog. It is a web app; no .ipa, Apple signing profile, or App Store submission is included. The previously tested Android APK remains version 2.2.1.
 
-## Requirements
-- PHP 8.2+ with PDO SQLite (fresh demo) or PDO MySQL, plus mbstring, openssl, fileinfo, DOM/XML, curl, and zip.
-- Composer 2.
-- Node.js 22.22+ (Node 24 was used here) and npm.
-- A modern browser. Internet access is needed for dependency installation; normal local use does not need a CDN.
+Android APK support uses Capacitor 8. Read **ANDROID_APP_GUIDE.md** for installing the APK, connecting the phone to Laravel, rebuilding with Gradle, and the remaining device checks. The web commands below are unchanged.
 
-## Fresh classroom demo on Windows
-Extract the ZIP to a folder you can write to. Open PowerShell in that folder. The default example environment uses a new local SQLite database, which does not need MySQL.
+## Administrator login
 
-```powershell
-.\SETUP.ps1 -SeedDemo
-cd backend
-php artisan staff:create admin@example.test --role=admin
-php artisan staff:create cashier@example.test --role=cashier
-cd ..
-```
+- Email: **Admin@Email.com**
+- Password: **Admin@123456**
 
-The staff command prompts for a name and a password of at least 12 characters. There are no shared default credentials. If PowerShell blocks scripts, use the manual commands below; changing Windows policy is not necessary.
+The administrator is included in `backend/database/seeders/DemoAdminSeeder.php`. One-time setup seeds it automatically into a fresh local database, with a hashed password. No registration, account creation command, or password prompt is needed.
 
-Start two terminals in the project folder:
+## One-time setup
 
-```powershell
-# Terminal 1
-.\START_BACKEND.ps1
-```
+Extract this updated ZIP into a new folder and open **AHY_WaterStation_Final** in VS Code. Install PHP 8.2+, Composer 2, and Node.js 22.22+ first. Enable PHP's PDO SQLite extension. Internet access is needed to install dependencies.
 
-```powershell
-# Terminal 2
-.\START_FRONTEND.ps1
-```
+From the project root:
 
-Open [AHY Water Station locally](http://127.0.0.1:9000) and sign in with the account you created. Both servers must remain running. Do not open frontend/index.html directly.
-
-## Manual installation
 ```powershell
 cd backend
-composer install
-Copy-Item .env.example .env  # Only when .env does not exist
-New-Item -ItemType File database/database.sqlite  # Only for a fresh default SQLite setup
-php artisan key:generate  # Only when creating a new .env with an empty APP_KEY
-php artisan migrate
-php artisan db:seed       # Optional sample products for a demo database
-php artisan staff:create admin@example.test --role=admin
-php artisan serve --host=127.0.0.1 --port=8000
+composer run setup
 ```
 
-In a second terminal:
+This installs backend and frontend dependencies, creates a missing .env with a private key, creates the default SQLite database, migrates, and seeds the admin plus four water products. Existing keys, records, passwords, and stock are preserved. Setup is for APP_ENV=local.
+
+## Start the website
+
+Terminal 1, starting from the project root:
+
+```powershell
+cd backend
+php artisan serve
+```
+
+Terminal 2, starting from the project root:
+
 ```powershell
 cd frontend
-npm.cmd ci
-npm.cmd run typecheck
-npm.cmd run build
-npm.cmd run dev
+npm run dev
 ```
 
-## Upgrade an existing MySQL project
-1. Make a backup of your project and export the existing database. First test the upgrade on a separate copy of that database.
-2. Copy your existing backend `.env` into the new backend folder. Keep its APP_KEY, MySQL database name, host, port, username, and password. Do not overwrite it with `.env.example` or regenerate a populated application's key.
-3. Run `composer install`, `php artisan config:clear`, then `php artisan migrate`. Do **not** run `migrate:fresh` or `migrate:refresh`: these can erase data.
-4. Provision an admin account with `php artisan staff:create your-email --role=admin`. Existing accounts receive the cashier role. To update an existing account explicitly, use `php artisan staff:create your-email --role=admin --reset`.
-5. Run `npm.cmd ci` inside frontend, then typecheck and build. Start both servers.
-6. Check old receipts, products, stock, and reports against your backup. Legacy orders can have missing payment metadata or product-name snapshots; the UI provides fallbacks. Stock movement history starts from the movements actually recorded; existing stock is not reconstructed retroactively.
+Open **http://127.0.0.1:9000** and sign in using the credentials above. Laravel runs at **http://127.0.0.1:8000**; the frontend forwards /api requests to it. Keep both terminals open. Ctrl+C stops each server. On later runs, only these two start commands are needed.
 
-For a new MySQL database, create an empty `ahy_water_station` database in phpMyAdmin, then configure these values in backend/.env before migration:
-```dotenv
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=ahy_water_station
-DB_USERNAME=root
-DB_PASSWORD=
-```
-Use your actual credentials and port. Never include `.env`, database dumps, or real customer details in a school submission ZIP.
+## Fix the screenshot errors
 
-## Roles and daily operations
-| Operation | Cashier | Admin |
-| --- | --- | --- |
-| Dashboard, POS, sales, receipts | Yes | Yes |
-| Customer create/edit/search/history | Yes | Yes |
-| Delivery scheduling and progress | Yes | Yes |
-| Read stock and movement history | Yes | Yes |
-| Product management and stock adjustment | No | Yes |
-| Void sales and delete unlinked customers | No | Yes |
-| Reports, CSV export, expenses, activity log | No | Yes |
-| Change own password and sign out | Yes | Yes |
+- **Missing vendor/autoload.php:** backend dependencies were not installed. Run `composer run setup` in backend.
+- **quasar is not recognized during npm run dev:** frontend dependencies were not installed. Setup installs them; alternatively, run `npm install` in frontend. Use `npm run dev` to find the local Quasar dependency. A global Quasar installation is unnecessary.
+- **npm.ps1 cannot be loaded:** use `npm.cmd run dev` in PowerShell or use VS Code's Command Prompt terminal. Changing Windows execution policy is unnecessary.
+- **Missing SQLite driver:** enable pdo_sqlite and sqlite3 in the terminal's PHP configuration; `php --ini` identifies it.
 
-Use Inventory to change stock with a reason. A physical-count correction sets the exact stock count. Product editing changes product details, price, alert level, or active status.
+## Existing installations
 
-Cash must cover the sale total. GCash and bank transfer require an exact manually confirmed amount and a reference. No payment is processed by this app. A void preserves the sale record and returns stock once; arrange any real refund separately. Orders already dispatched or delivered cannot be voided.
+Back up your database and private .env first. Setup never resets existing passwords or roles. If Admin@Email.com already exists, it keeps its existing password. For the documented default login, use a fresh local extraction/database. Do not delete real transaction records to obtain it.
 
-New receipts preserve the product name at sale time. Use Sales & Receipts to reprint. Browser Print / Save PDF produces the receipt; check the actual printer's paper size and margins before your presentation. Receipts are labeled as project demonstrations.
+After manual dependency/configuration setup, `php artisan migrate --seed` applies migrations and seeds the same login. Demo credentials are created only in local/testing environments. Change the shared demo password before public hosting.
 
-## Build the frontend into Laravel (optional)
-```powershell
-.\BUILD_LOCAL.ps1
-.\START_BACKEND.ps1
-```
-Open [the combined local application](http://127.0.0.1:8000). This copies compiled UI assets into backend/public/app; they are generated files and can be rebuilt. `php artisan serve` is a local development server, not a public production deployment.
+## Included workflows
 
-## Verification commands
+| Area | Features |
+| --- | --- |
+| Dashboard | Seven-day sales, comparison, stock alerts, recent receipts, upcoming deliveries, auto-refresh |
+| POS | Product filters, quantities, customer selection/creation, cash shortcuts, manually confirmed digital payments |
+| Checkout recovery | Retained retry key and confirmed total, stock/price checks, replay protection |
+| Receipts | Product-name snapshots, cashier, received/change amounts, text download, Print / Save PDF |
+| Inventory | Restock, damage/loss, physical-count correction, movement history |
+| Customers | Search, contacts, completed spending, purchase and delivery history |
+| Deliveries | Scheduling, rider assignment, rescheduling before dispatch, status transitions, reasoned cancellation, timeline |
+| Management | Admin-only product changes, voids, expenses, reports/CSV, audit log |
+| Accounts | Admin/cashier access, password change, login-email rename, expiring hashed access tokens |
+
+## Upgrade and other staff accounts
+
+Retain your private backend/.env, APP_KEY, and database settings. Install dependencies with `composer install` in backend and `npm install` in frontend, apply `php artisan migrate`, then start both servers. Do not run destructive migration resets against records you want to retain. For MySQL, rehearse upgrades and concurrent last-stock checkouts on a backed-up copy; SQLite tests do not prove MySQL locking behavior.
+
+Create another cashier using `php artisan staff:create cashier@example.test --role=cashier` in backend. To rename a login, use `php artisan staff:email CURRENT_EMAIL Admin@Email.com`; its identity/password/history are preserved and old sessions are revoked. The built-in local admin requires neither command. Email matching is case insensitive.
+
+## Manual setup alternative
+
+In backend, run `composer install`, then `php setup-local.php`, then `php artisan migrate --seed`. In frontend, run `npm install`. Start both servers as above. The PHP helper preserves existing APP_KEY and creates only missing local configuration/default SQLite files. It refuses non-local environments. The optional root SETUP.ps1 delegates to composer run setup.
+
+The ZIP is source code; dependencies require a one-time installation from the lockfiles. PHP needs PDO SQLite (or PDO MySQL), mbstring, openssl, fileinfo, DOM/XML, curl, and zip.
+
+## Checks and optional combined build
+
 ```powershell
 cd backend
-php artisan config:clear
 php artisan test
 cd ../frontend
-npm.cmd run typecheck
-npm.cmd run build
+npm test
+npm run typecheck
+npm run build
 ```
-Backend tests use an in-memory SQLite database through phpunit.xml. Check that no cached application configuration points at a live database before running tests. MySQL migration and concurrent-session checks are listed separately in the acceptance checklist.
 
-## Troubleshooting
-- **Connection refused / failed request:** keep Laravel on 127.0.0.1:8000 and Quasar on 127.0.0.1:9000. The dev proxy forwards /api to Laravel.
-- **401 after a while:** sessions expire after eight hours. Sign in again. Logout removes the current token; changing a password revokes all of that account's tokens.
-- **403:** the action requires the admin role; changing browser navigation does not change server permissions.
-- **409 on checkout:** a checkout key was reused with different details. Review Sales & Receipts before starting a new transaction.
-- **Unconfirmed checkout:** use Retry checkout. The exact pending submission stays in the current browser tab until confirmed or explicitly rejected. Keep the tab open while resolving a network failure.
-- **No application encryption key:** for a new installation with an empty key, run `php artisan key:generate`.
-- **Database/table not found:** inspect `.env`, run config:clear and migrate, and check MySQL/SQLite configuration.
-- **Storage/cache error:** ensure backend/storage and backend/bootstrap/cache exist and are writable by your PHP process.
-- **PowerShell blocks npm.ps1:** use `npm.cmd` as in these instructions.
+BUILD_LOCAL.ps1 builds the frontend into Laravel for an optional single-server presentation. After that build, START.ps1 serves the combined website at http://127.0.0.1:8000. The default workflow is php artisan serve plus npm run dev.
 
-## Deliberate scope
-Reports show sales less recorded expenses, not accounting profit. No payment gateway, SMS, full accounting, supplier purchasing, container-return ledger, web staff management, or automatic cloud backup is included. The activity log is read-only in the app but not tamper-proof against database administrators. The app does not submit transactions offline.
+See VERIFICATION.md, RELEASE_NOTES.md, FINAL_PROJECT_GUIDE.md, and MANUAL_ACCEPTANCE_CHECKLIST.md for checks and demonstration guidance.
 
-Your original ZIP is unchanged. Validate this revision against your adviser’s rubric and the real demonstration environment before submitting it.
+## Scope
+
+GCash/bank payments are manually confirmed records; no payment gateway charges money. Printer margins need checking on the actual device. Sales less expenses is not full accounting profit. Cloud hosting, SMS/courier integrations, and offline sale synchronization are not included.
+
+Technical references: [Laravel seeding](https://laravel.com/docs/12.x/seeding), [Composer dependency installation](https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies).
