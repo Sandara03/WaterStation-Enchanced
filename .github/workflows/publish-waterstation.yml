@@ -15,7 +15,7 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
-          import hashlib, pathlib, zipfile, os
+          import hashlib, pathlib, zipfile, os, subprocess
           archive = pathlib.Path('waterstation-v2.2.2-source.zip')
           assert hashlib.sha256(archive.read_bytes()).hexdigest() == 'c005be1520d80cf61cb025e84a0725c930636cb4755cffde66bbc9f368d2cc79'
           root = pathlib.Path.cwd().resolve()
@@ -29,11 +29,18 @@ jobs:
                       os.chmod(target, mode & 0o777)
           archive.unlink()
           pathlib.Path('.github/workflows/publish-waterstation.yml').unlink()
+          subprocess.run(['git', 'add', '-A'], check=True)
+          with zipfile.ZipFile(__import__('io').BytesIO(subprocess.check_output(['git', 'show', 'HEAD:waterstation-v2.2.2-source.zip']))) as source:
+              for entry in source.infolist():
+                  if entry.is_dir():
+                      continue
+                  blob = subprocess.check_output(['git', 'hash-object', '-w', '--stdin'], input=source.read(entry)).decode().strip()
+                  mode = '100755' if (entry.external_attr >> 16) & 0o111 else '100644'
+                  subprocess.run(['git', 'update-index', '--add', '--cacheinfo', mode, blob, entry.filename], check=True)
           PY
       - name: Commit source while preserving repository history
         shell: bash
         run: |
-          git add -A
           test "$(git write-tree)" = "0aeb2ca09b7c311c3e5813b35331af6eeb58e273"
           git diff --cached --check
           git config user.name "Sandara03"
