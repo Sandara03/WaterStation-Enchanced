@@ -1,0 +1,42 @@
+name: Publish verified Water Station v2.2.2
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Verify and unpack reviewed source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, pathlib, zipfile, os
+          archive = pathlib.Path('waterstation-v2.2.2-source.zip')
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == 'c005be1520d80cf61cb025e84a0725c930636cb4755cffde66bbc9f368d2cc79'
+          root = pathlib.Path.cwd().resolve()
+          with zipfile.ZipFile(archive) as source:
+              for entry in source.infolist():
+                  target = (root / entry.filename).resolve()
+                  assert target.is_relative_to(root) and '.git' not in pathlib.PurePosixPath(entry.filename).parts
+                  source.extract(entry, root)
+                  mode = entry.external_attr >> 16
+                  if mode and not entry.is_dir():
+                      os.chmod(target, mode & 0o777)
+          archive.unlink()
+          pathlib.Path('.github/workflows/publish-waterstation.yml').unlink()
+          PY
+      - name: Commit source while preserving repository history
+        shell: bash
+        run: |
+          git add -A
+          test "$(git write-tree)" = "0aeb2ca09b7c311c3e5813b35331af6eeb58e273"
+          git diff --cached --check
+          git config user.name "Sandara03"
+          git config user.email "220882921+Sandara03@users.noreply.github.com"
+          git commit -m "Update Water Station to v2.2.2 with Android and iPhone support"
+          git push origin HEAD:main
