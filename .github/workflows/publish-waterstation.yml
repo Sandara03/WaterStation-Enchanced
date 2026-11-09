@@ -17,7 +17,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, pathlib, zipfile, os, subprocess
           archive = pathlib.Path('waterstation-v2.2.2-source.zip')
-          assert hashlib.sha256(archive.read_bytes()).hexdigest() == 'c005be1520d80cf61cb025e84a0725c930636cb4755cffde66bbc9f368d2cc79'
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == '5e96e168b852f8b30e2c672acfd2f334eeddcba4e48b572fcb2752be064ee655'
           root = pathlib.Path.cwd().resolve()
           with zipfile.ZipFile(archive) as source:
               for entry in source.infolist():
@@ -43,6 +43,7 @@ jobs:
         run: |
           test "$(git write-tree)" = "0aeb2ca09b7c311c3e5813b35331af6eeb58e273"
           git diff --cached --check
+          git restore --source=HEAD --staged --worktree -- .github/workflows/publish-waterstation.yml
           git config user.name "Sandara03"
           git config user.email "220882921+Sandara03@users.noreply.github.com"
           git commit -m "Update Water Station to v2.2.2 with Android and iPhone support"
