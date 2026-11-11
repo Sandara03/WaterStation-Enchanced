@@ -1,15 +1,25 @@
 import axios from 'axios';
-import { normalizeServerUrl } from './mobileServer';
+import { normalizeServerUrl, resolveMobileServer } from './mobileServer';
 
 export const isMobileApp = process.env.MODE === 'capacitor';
 export const defaultMobileServer = process.env.AHY_API_URL || '';
-let mobileServer = defaultMobileServer;
+let mobileConnection = resolveMobileServer(defaultMobileServer, '');
 if (isMobileApp) {
-  try { mobileServer = localStorage.getItem('ahy_api_server') || defaultMobileServer; } catch { /* Use the build default if device storage is unavailable. */ }
+  try {
+    const saved = localStorage.getItem('ahy_api_server') || '';
+    mobileConnection = resolveMobileServer(defaultMobileServer, saved, !!sessionStorage.getItem('ahy_checkout'));
+    if (mobileConnection.fixed && saved !== mobileConnection.url) {
+      // A hosted update must not send a previous local server's token or cart to the new API.
+      sessionStorage.removeItem('ahy_token');
+      sessionStorage.removeItem('ahy_cart');
+      localStorage.setItem('ahy_api_server', mobileConnection.url);
+    }
+  } catch { /* Use the build default if device storage is unavailable. */ }
 }
+export const fixedMobileServer = isMobileApp && mobileConnection.fixed;
 
 const api = axios.create({
-  baseURL: isMobileApp ? mobileServer : import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: isMobileApp ? mobileConnection.url : import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 20000,
   headers: {
     Accept: 'application/json',
@@ -18,6 +28,7 @@ const api = axios.create({
 });
 
 export function saveMobileServer(input: string) {
+  if (fixedMobileServer) throw new Error('This app connects automatically to the hosted Water Station server.');
   const target = normalizeServerUrl(input);
   if (sessionStorage.getItem('ahy_checkout')) {
     throw new Error('Resolve the pending checkout on the original server before changing servers.');
@@ -48,7 +59,9 @@ api.interceptors.response.use(
 );
 export function errorMessage(error: any): string {
   if (isMobileApp && !error.response && (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || /network|timed?\s*out|timeout/i.test(error.message || ''))) {
-    return 'Cannot reach the Water Station server. Open Server connection, check the API address, and test it in Chrome on this phone. Keep Laravel running and both devices on the same Wi-Fi.';
+    return fixedMobileServer
+      ? 'Cannot reach Water Station. Check your internet connection and try again. The free demo server can take about a minute to wake up.'
+      : 'Cannot reach the Water Station server. Open Server connection, check the API address, and test it in Chrome on this phone. Keep Laravel running and both devices on the same Wi-Fi.';
   }
   const errors = error.response?.data?.errors;
   return (

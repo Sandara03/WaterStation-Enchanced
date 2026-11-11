@@ -64,3 +64,11 @@
 No physical Android phone was connected. A disposable emulator could not start because Windows hardware acceleration was unavailable. No Windows virtualization features were changed. Therefore Android installation/startup, touch navigation, actual print/share dialogs, phone-to-computer firewall access, and app resume have not been claimed as tested.
 
 Use the real-phone checklist in ANDROID_APP_GUIDE.md. Compilation/signature verification and API tests do not replace device testing. Existing screenshots under docs/screenshots/final show the earlier 2.1.0 browser build, not this APK. MySQL concurrency, physical printers, hosted APIs, production signing, and store publication are separate checks. GitHub/Vercel publication was not performed.
+
+## Render preparation checks — 11 November 2026
+
+- Backend canonical suite: 46 tests / 251 assertions passed with SQLite, and 46 tests / 251 assertions passed with an isolated PostgreSQL 16 database. The cashier authorization test now uses the sale's actual ID instead of assuming ID 1; PostgreSQL sequences continue after transaction rollbacks.
+- Frontend: 13 tests passed, including fixed hosted API selection, ignoring an old saved Wi-Fi address, retaining local configuration, and keeping an unresolved checkout on its original database. Type checking and the combined production build passed.
+- render.yaml validated against Render's published JSON Schema. Both services explicitly use the Free plan; external database access is disabled by the empty IP allow list.
+- Hosted admin initialization uses a private environment password, preserves existing identities and credentials, and rejects missing passwords. The local demo login remains local.
+- Docker is not installed on this Windows machine, so the container build still needs verification on Render. Browser automation stopped because it could not verify Chrome's URL. No live Render deployment or APK with a real hosted URL was completed during these preparation checks.

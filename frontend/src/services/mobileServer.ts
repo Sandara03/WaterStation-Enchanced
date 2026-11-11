@@ -1,3 +1,12 @@
+export function resolveMobileServer(buildUrl: string, savedUrl: string, pendingCheckout = false) {
+  const fixedUrl = buildUrl.trim().startsWith('https://') ? normalizeServerUrl(buildUrl) : '';
+  // Keep an unresolved checkout on the server that received it until it is reconciled.
+  if (pendingCheckout && savedUrl && fixedUrl && savedUrl !== fixedUrl) {
+    return { url: savedUrl, fixed: false };
+  }
+  return { url: fixedUrl || savedUrl || buildUrl, fixed: !!fixedUrl };
+}
+
 export function normalizeServerUrl(input: string): string {
   let url: URL;
   try {

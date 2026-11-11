@@ -49,7 +49,7 @@
               />
             </q-form>
           </q-card-section>
-          <q-card-section v-if="isMobileApp" class="q-pt-none">
+          <q-card-section v-if="isMobileApp && !fixedMobileServer" class="q-pt-none">
             <q-expansion-item icon="dns" label="Server connection" caption="Connect to your Water Station computer">
               <div class="q-pt-md">
                 <q-input v-model.trim="serverAddress" outlined label="API server address" type="url" placeholder="http://192.168.1.10:8000/api" :disable="connecting || busy" />
@@ -77,7 +77,7 @@
                 <li>Choose <strong>Add to Home Screen</strong>.</li>
                 <li>Keep <strong>Open as Web App</strong> on if shown, then tap <strong>Add</strong>.</li>
               </ol>
-              <p class="text-caption text-grey-7 q-mb-none">Keep your station computer on and your phone on the same Wi-Fi. Sales and account access need the station server.</p>
+              <p class="text-caption text-grey-7 q-mb-none">Sales and account access need a connection to the station server. For a local demo, keep your computer on and both devices on the same Wi-Fi. For the hosted website, use your internet connection.</p>
             </q-card-section>
             <q-card-actions align="right"><q-btn flat color="primary" label="Got it" v-close-popup /></q-card-actions>
           </q-card>
@@ -92,7 +92,7 @@ import axios from 'axios';
 import { CapacitorHttp } from '@capacitor/core';
 import { useRoute, useRouter } from 'vue-router';
 import { signIn } from '../services/auth';
-import api, { errorMessage, isMobileApp, saveMobileServer } from '../services/api';
+import api, { errorMessage, isMobileApp, fixedMobileServer, saveMobileServer } from '../services/api';
 import { normalizeServerUrl } from '../services/mobileServer';
 import { clearSession } from '../services/auth';
 const router = useRouter(),

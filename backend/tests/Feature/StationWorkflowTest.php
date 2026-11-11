@@ -39,13 +39,13 @@ class StationWorkflowTest extends TestCase
     {
         $this->staff('cashier'); $p = $this->product();
         $this->getJson('/api/products')->assertOk();
-        $this->postJson('/api/orders', $this->cart($p))->assertCreated();
+        $orderId = $this->postJson('/api/orders', $this->cart($p))->assertCreated()->json('id');
         $this->postJson('/api/products', [])->assertForbidden();
         $this->getJson('/api/reports/summary')->assertForbidden();
         $this->getJson('/api/reports/export')->assertForbidden();
         $this->getJson('/api/audit-logs')->assertForbidden();
         $this->postJson('/api/inventory/'.$p->id.'/adjust', [])->assertForbidden();
-        $this->postJson('/api/orders/1/void', ['reason' => 'Test void'])->assertForbidden();
+        $this->postJson('/api/orders/'.$orderId.'/void', ['reason' => 'Test void'])->assertForbidden();
         $this->getJson('/api/expenses')->assertForbidden();
     }
     public function test_sale_records_correct_totals_change_stock_and_audit(): void

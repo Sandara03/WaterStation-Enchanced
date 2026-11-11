@@ -1,6 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeServerUrl } from '../src/services/mobileServer.ts';
+import { normalizeServerUrl, resolveMobileServer } from '../src/services/mobileServer.ts';
+
+test('hosted build replaces a stale Wi-Fi address and needs no address panel', () => {
+  assert.deepEqual(resolveMobileServer('https://station.example.test/api/', 'http://192.168.254.156:8001/api'),
+    { url: 'https://station.example.test/api', fixed: true });
+  assert.deepEqual(resolveMobileServer('https://station.example.test/api', ''),
+    { url: 'https://station.example.test/api', fixed: true });
+});
+
+test('local builds retain editable connection settings', () => {
+  assert.deepEqual(resolveMobileServer('', 'http://192.168.1.10:8001/api'),
+    { url: 'http://192.168.1.10:8001/api', fixed: false });
+  assert.deepEqual(resolveMobileServer('http://192.168.1.10:8001/api', ''),
+    { url: 'http://192.168.1.10:8001/api', fixed: false });
+});
+
+test('a hosted update never redirects an unresolved checkout to another database', () => {
+  assert.deepEqual(resolveMobileServer('https://station.example.test/api', 'http://192.168.1.10:8001/api', true),
+    { url: 'http://192.168.1.10:8001/api', fixed: false });
+});
 
 test('phone server accepts private Wi-Fi and emulator hosts and normalizes the API path', () => {
   assert.equal(normalizeServerUrl(' http://192.168.254.156:8000/ '), 'http://192.168.254.156:8000/api');

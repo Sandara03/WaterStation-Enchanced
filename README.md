@@ -1,5 +1,7 @@
 # AHY Water Station — iPhone home-screen web app 2.2.2
 
+For the optional free Render deployment and an Android build without the server-address panel, see **RENDER_DEPLOYMENT.md**. The local commands below still work.
+
 Laravel 12 API with a Vue 3, TypeScript, and Quasar interface for staff access, POS, inventory, receipts, customers, deliveries, expenses, management reports, and activity history.
 
 For iPhone installation from Safari on the same Wi-Fi, read **IPHONE_INSTALLATION.md**. This release adds the home-screen manifest, Apple touch icon, launch metadata, and an installation-help dialog. It is a web app; no .ipa, Apple signing profile, or App Store submission is included. The previously tested Android APK remains version 2.2.1.

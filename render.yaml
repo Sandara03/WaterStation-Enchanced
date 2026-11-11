@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: ahy-waterstation
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: RENDER_APP_KEY
+        generateValue: true
+      - key: HOSTED_ADMIN_EMAIL
+        value: Admin@Email.com
+      - key: HOSTED_ADMIN_PASSWORD
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_SSLMODE
+        value: require
+      - key: DB_URL
+        fromDatabase:
+          name: ahy-waterstation-db
+          property: connectionString
+      - key: CACHE_STORE
+        value: database
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_CHANNEL
+        value: stderr
+databases:
+  - name: ahy-waterstation-db
+    plan: free
+    region: singapore
+    databaseName: ahy_waterstation
+    user: ahy_station
+    ipAllowList: []

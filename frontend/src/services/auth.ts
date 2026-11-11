@@ -29,7 +29,8 @@ export async function restoreSession() {
   }
 }
 export async function signIn(email: string, password: string) {
-  const { data } = await api.post('/auth/login', { email, password });
+  // Free hosted instances can take around a minute to wake after inactivity.
+  const { data } = await api.post('/auth/login', { email, password }, { timeout: 90000 });
   sessionStorage.setItem('ahy_token', data.token);
   staff.value = data.user;
   checked = true;
